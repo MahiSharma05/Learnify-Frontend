@@ -1,0 +1,15 @@
+export const environment = {
+  production: true,
+  apiGateway: 'http://localhost:8080',
+  authServiceUrl: 'http://localhost:8081',
+  courseServiceUrl: 'http://localhost:8082',
+  lessonServiceUrl: 'http://localhost:8083',
+  enrollmentServiceUrl: 'http://localhost:8084',
+  assessmentServiceUrl: 'http://localhost:8085',
+  paymentServiceUrl: 'http://localhost:8086',
+  progressServiceUrl: 'http://localhost:8087',
+  discussionServiceUrl: 'http://localhost:8088',
+  notificationServiceUrl: 'http://localhost:8089',
+  googleOAuthClientId: '961285039300-6kon4v580veibkn9c1h9up88ep1usv9k.apps.googleusercontent.com',
+  googleOAuthRedirectUri: 'http://localhost:4200/auth/oauth2/callback',
+};
