@@ -1,3 +1,4 @@
+declare var Razorpay: any;
 // ── Auth Models ──────────────────────────────────────────────────────────────
 export interface RegisterRequest {
   fullName: string;
@@ -34,7 +35,7 @@ export interface User {
 
 // ── Course Models ─────────────────────────────────────────────────────────────
 export interface Course {
-  courseId: number;
+  id: number;
   title: string;
   description: string;
   category: string;
@@ -44,11 +45,12 @@ export interface Course {
   instructorName?: string;
   thumbnailUrl?: string;
   totalDuration?: number;
-  isPublished: boolean;
+  published: boolean;
   createdAt?: string;
   language?: string;
   totalEnrollments?: number;
   rating?: number;
+  approvalStatus?: string;
 }
 
 export interface CourseRequest {
@@ -96,21 +98,24 @@ export interface Resource {
 
 // ── Enrollment Models ─────────────────────────────────────────────────────────
 export interface Enrollment {
-  enrollmentId: number;
+  id: number;             // ← backend uses "id", not "enrollmentId"
+  enrollmentId?: number;  // keep as optional alias for backward compat
   studentId: number;
   courseId: number;
+  studentEmail?: string;
+  courseTitle?: string;
+  courseThumbnail?: string;
   enrolledAt: string;
   completedAt?: string;
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
   progressPercent: number;
   certificateIssued: boolean;
-  courseTitle?: string;
-  courseThumbnail?: string;
+  certificateUrl?: string;
 }
 
 // ── Quiz / Assessment Models ──────────────────────────────────────────────────
 export interface Quiz {
-  quizId: number;
+  id: number;
   courseId: number;
   title: string;
   description?: string;
@@ -131,7 +136,7 @@ export interface QuizRequest {
 }
 
 export interface Question {
-  questionId: number;
+  id: number;
   quizId: number;
   text: string;
   type: 'MCQ' | 'TRUE_FALSE';
@@ -167,15 +172,20 @@ export interface AttemptRequest {
 
 // ── Payment Models ─────────────────────────────────────────────────────────────
 export interface Payment {
-  paymentId: number;
+  id: number;           // ← backend returns "id"
+  paymentId?: number;   // optional alias
   studentId: number;
-  courseId: number;
+  studentEmail?: string;
+  courseId?: number;
+  courseTitle?: string;
   amount: number;
-  status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+  currency: string;
   mode: string;
+  status: string;
   transactionId: string;
   paidAt: string;
-  currency: string;
+  failureReason?: string;
+  refundedAt?: string;
 }
 
 export interface PaymentRequest {
@@ -186,14 +196,21 @@ export interface PaymentRequest {
 }
 
 export interface Subscription {
-  subscriptionId: number;
+  id: number;              // ← backend returns "id"
+  subscriptionId?: number; // optional alias
   studentId: number;
+  studentEmail?: string;
   plan: 'FREE' | 'MONTHLY' | 'ANNUAL';
   startDate: string;
   endDate: string;
-  status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+  status: string;
   amountPaid: number;
   autoRenew: boolean;
+  active?: boolean;
+  daysRemaining?: number;
+  paymentId?: number;
+  createdAt?: string;
+  cancelledAt?: string;
 }
 
 // ── Progress / Certificate Models ─────────────────────────────────────────────
@@ -209,14 +226,19 @@ export interface Progress {
 }
 
 export interface Certificate {
-  certificateId: number;
+  id: number;              // ← backend returns "id"
+  certificateId?: number;  // optional alias
   studentId: number;
+  studentEmail?: string;
+  studentName?: string;
   courseId: number;
-  issuedAt: string;
-  certificateUrl: string;
-  verificationCode: string;
-  instructorName: string;
   courseName: string;
+  instructorName: string;
+  verificationCode: string;
+  certificateUrl: string;
+  issuedAt: string;
+  issuedDate?: string;
+  enteredCode?: string;
 }
 
 // ── Discussion Models ──────────────────────────────────────────────────────────

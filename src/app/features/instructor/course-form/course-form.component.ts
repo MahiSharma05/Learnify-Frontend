@@ -98,7 +98,7 @@ export class CourseFormComponent implements OnInit {
   fb            = inject(FormBuilder);
 
   isEdit = false;
-  courseId = 0;
+  id = 0;
   saving = signal(false);
   error  = signal('');
 
@@ -116,30 +116,54 @@ export class CourseFormComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.courseId = +this.route.snapshot.paramMap.get('id')!;
-    if (this.courseId) {
+    this.id = +this.route.snapshot.paramMap.get('id')!;
+    if (this.id) {
       this.isEdit = true;
-      this.courseService.getCourseById(this.courseId).subscribe(c => this.form.patchValue(c as any));
+      this.courseService.getCourseById(this.id).subscribe(c => this.form.patchValue(c as any));
     }
   }
 
   submit() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.saving.set(true);
-    this.error.set('');
-    const obs = this.isEdit
-      ? this.courseService.updateCourse(this.courseId, this.form.value as any)
-      : this.courseService.createCourse(this.form.value as any);
-
-    obs.subscribe({
-      next: c => {
-        this.saving.set(false);
-        this.toast.success(this.isEdit ? 'Course updated!' : 'Course created!');
-        this.router.navigate(['/instructor/courses', c.courseId, 'lessons']);
-      },
-      error: e => { this.saving.set(false); this.error.set(e.error?.message || 'Failed to save course'); }
-    });
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    return;
   }
+
+  this.saving.set(true);
+  this.error.set('');
+
+  const payload = {
+    ...this.form.value,
+    instructorId: this.auth.user()?.userId
+  };
+
+  const obs = this.isEdit
+    ? this.courseService.updateCourse(this.id, payload as any)
+    : this.courseService.createCourse(payload as any);
+
+  obs.subscribe({
+    next: c => {
+      this.saving.set(false);
+      this.toast.success(
+        this.isEdit ? 'Course updated!' : 'Course created!'
+      );
+
+      this.router.navigate([
+        '/instructor/courses',
+        c.id,
+        'lessons'
+      ]);
+    },
+
+    error: e => {
+      this.saving.set(false);
+
+      this.error.set(
+        e.error?.message || 'Failed to save course'
+      );
+    }
+  });
+}
 
   clearThumb() { this.form.patchValue({ thumbnailUrl: '' }); }
 }

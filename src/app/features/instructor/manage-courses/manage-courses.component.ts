@@ -40,7 +40,7 @@ import { Course } from '../../../core/models';
               </tr>
             </thead>
             <tbody>
-              @for (c of courses(); track c.courseId) {
+              @for (c of courses(); track c.id) {
                 <tr>
                   <td>
                     <div style="display:flex;align-items:center;gap:12px">
@@ -56,17 +56,17 @@ import { Course } from '../../../core/models';
                   <td><span class="badge badge--muted">{{ c.level }}</span></td>
                   <td style="font-weight:700">{{ c.price === 0 ? 'Free' : '₹' + c.price }}</td>
                   <td>
-                    <span class="badge" [class]="c.isPublished ? 'badge--success' : 'badge--muted'">
-                      {{ c.isPublished ? 'Published' : 'Draft' }}
+                    <span class="badge" [class]="c.published ? 'badge--success' : 'badge--muted'">
+                      {{ c.published ? 'Published' : 'Draft' }}
                     </span>
                   </td>
                   <td>
                     <div style="display:flex;gap:6px">
-                      <a [routerLink]="['/instructor/courses', c.courseId, 'lessons']" class="btn btn--ghost btn--sm" title="Lessons">📋</a>
-                      <a [routerLink]="['/instructor/courses', c.courseId, 'quizzes']" class="btn btn--ghost btn--sm" title="Quizzes">📝</a>
-                      <a [routerLink]="['/instructor/courses', c.courseId, 'students']" class="btn btn--ghost btn--sm" title="Students">👥</a>
-                      <a [routerLink]="['/instructor/courses', c.courseId, 'edit']" class="btn btn--outline btn--sm">Edit</a>
-                      @if (!c.isPublished) {
+                      <a [routerLink]="['/instructor/courses', c.id, 'lessons']" class="btn btn--ghost btn--sm" title="Lessons">📋</a>
+                      <a [routerLink]="['/instructor/courses', c.id, 'quizzes']" class="btn btn--ghost btn--sm" title="Quizzes">📝</a>
+                      <a [routerLink]="['/instructor/courses', c.id, 'students']" class="btn btn--ghost btn--sm" title="Students">👥</a>
+                      <a [routerLink]="['/instructor/courses', c.id, 'edit']" class="btn btn--outline btn--sm">Edit</a>
+                      @if (!c.published) {
                         <button class="btn btn--success btn--sm" (click)="publish(c)" [disabled]="acting()">Publish</button>
                       } @else {
                         <button class="btn btn--outline btn--sm" (click)="unpublish(c)" [disabled]="acting()">Unpublish</button>
@@ -97,7 +97,7 @@ export class ManageCoursesComponent implements OnInit {
 
   publish(c: Course) {
     this.acting.set(true);
-    this.courseService.publishCourse(c.courseId).subscribe({
+    this.courseService.publishCourse(c.id).subscribe({
       next: () => { this.acting.set(false); this.toast.success('Course published!'); this.reload(); },
       error: () => { this.acting.set(false); this.toast.error('Failed to publish'); }
     });
@@ -105,7 +105,7 @@ export class ManageCoursesComponent implements OnInit {
 
   unpublish(c: Course) {
     this.acting.set(true);
-    this.courseService.unpublishCourse(c.courseId).subscribe({
+    this.courseService.unpublishCourse(c.id).subscribe({
       next: () => { this.acting.set(false); this.toast.success('Course unpublished'); this.reload(); },
       error: () => { this.acting.set(false); this.toast.error('Failed to unpublish'); }
     });
@@ -114,7 +114,7 @@ export class ManageCoursesComponent implements OnInit {
   delete(c: Course) {
     if (!confirm(`Delete "${c.title}"?`)) return;
     this.acting.set(true);
-    this.courseService.deleteCourse(c.courseId).subscribe({
+    this.courseService.deleteCourse(c.id).subscribe({
       next: () => { this.acting.set(false); this.toast.success('Course deleted'); this.reload(); },
       error: () => { this.acting.set(false); this.toast.error('Failed to delete'); }
     });

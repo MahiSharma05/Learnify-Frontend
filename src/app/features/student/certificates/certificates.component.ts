@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ProgressService } from '../../../core/services/progress.service';
 import { Certificate } from '../../../core/models';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-certificates',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <h1 class="page-title">My Certificates</h1>
     <p class="page-subtitle">Your earned course completion certificates</p>
@@ -31,20 +32,32 @@ import { Certificate } from '../../../core/models';
               <h3 class="cert-card__course">{{ cert.courseName }}</h3>
               <p class="cert-card__instructor">Instructor: {{ cert.instructorName }}</p>
               <p class="cert-card__date">Issued: {{ cert.issuedAt | date:'longDate' }}</p>
+              <!-- <div class="cert-card__code">
+                 <span>Verification Code:</span>
+                 <code>{{ cert.verificationCode }}</code>
+               </div> -->
               <div class="cert-card__code">
-                <span>Verification Code:</span>
-                <code>{{ cert.verificationCode }}</code>
+                <span>Paste Verification Code:</span>
+                <input
+                  type="text"
+                  [(ngModel)]="cert.enteredCode"
+                  placeholder="Paste code here"
+                   style="padding:8px; border-radius:6px; border:1px solid #ccc; width:100%; margin-top:5px;"/>
               </div>
             </div>
             <div class="cert-card__actions">
-              @if (cert.certificateUrl) {
-                <a [href]="cert.certificateUrl" target="_blank" class="btn btn--primary btn--sm">
-                  ⬇ Download PDF
-                </a>
-              }
-              <a [routerLink]="['/verify', cert.verificationCode]" class="btn btn--outline btn--sm">
-                🔗 Verify
-              </a>
+              <a [routerLink]="['/certificate', cert.id]" class="btn btn--primary btn--sm">
+              🎓 View Certificate
+               </a>
+              <!-- <a [routerLink]="['/verify', cert.verificationCode]" class="btn btn--outline btn--sm">
+                 🔗 Verify
+              </a> -->
+              <button 
+             class="btn btn--outline btn--sm"
+             [disabled]="!cert.enteredCode"
+             (click)="verify(cert.enteredCode || '')">
+             🔍 Verify
+             </button>
               <button class="btn btn--ghost btn--sm" (click)="copyCode(cert.verificationCode)">
                 📋 Copy Code
               </button>
@@ -87,7 +100,73 @@ export class CertificatesComponent implements OnInit {
 
   ngOnInit() { this.progressService.getMyCertificates().subscribe(c => this.certs.set(c)); }
 
-  copyCode(code: string) {
-    navigator.clipboard.writeText(code).then(() => alert('Code copied!'));
+  copyCode(code: string | null | undefined) {
+
+  console.log("Code being copied 👉", code);
+
+  // 🔒 Prevent copying null/empty
+  if (!code) {
+    alert("No code available to copy ❌");
+    return;
   }
+
+  // ✅ Modern clipboard API
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(code)
+      .then(() => {
+        console.log("Copied successfully ✅");
+        alert("Code copied!");
+      })
+      .catch(err => {
+        console.error("Clipboard failed ❌", err);
+        this.fallbackCopy(code);   // fallback
+      });
+  } else {
+    this.fallbackCopy(code);       // fallback
+  }
+}
+
+// 🔥 Fallback for older browsers
+fallbackCopy(text: string) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  try {
+    document.execCommand("copy");
+    console.log("Fallback copied 👉", text);
+    alert("Code copied!");
+  } catch (err) {
+    console.error("Fallback failed ❌", err);
+    alert("Copy failed ❌");
+  }
+
+  document.body.removeChild(textarea);
+}
+verify(code: string) {
+
+  console.log("Verifying 👉", code);
+
+  if (!code) {
+    alert("Please paste verification code ❌");
+    return;
+  }
+
+  this.progressService.verifyCertificate(code).subscribe({
+    next: (res) => {
+      alert("Certificate Verified ✅");
+      console.log("Verified 👉", res);
+    },
+    error: () => {
+      alert("Invalid Certificate ❌");
+    }
+  });
+
+}
 }

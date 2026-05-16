@@ -11,6 +11,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { Course, Lesson, Quiz } from '../../../core/models';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
 import { FormsModule } from '@angular/forms';
+declare var Razorpay: any;
 
 @Component({
   selector: 'app-course-detail',
@@ -40,7 +41,7 @@ import { FormsModule } from '@angular/forms';
           <div class="price-box">
             <div class="price-main">{{ course()!.price === 0 ? 'Free' : ('₹' + course()!.price) }}</div>
             @if (isEnrolled()) {
-              <button class="btn btn--success btn--full" [routerLink]="['/courses', course()!.courseId, 'learn']">
+              <button class="btn btn--success btn--full" [routerLink]="['/courses', course()!.id, 'learn']">
                 ▶ Continue Learning
               </button>
             } @else if (auth.isLoggedIn()) {
@@ -100,7 +101,7 @@ import { FormsModule } from '@angular/forms';
 
           @if (quizzes().length > 0) {
             <h3 style="font-size:16px;font-weight:700;margin:24px 0 12px">Quizzes</h3>
-            @for (quiz of quizzes(); track quiz.quizId) {
+            @for (quiz of quizzes(); track quiz.id) {
               <div class="lesson-item">
                 <div class="lesson-item__icon">📝</div>
                 <div class="lesson-item__info">
@@ -108,7 +109,7 @@ import { FormsModule } from '@angular/forms';
                   <span class="lesson-item__dur">{{ quiz.timeLimitMinutes }} min · {{ quiz.passingScore }}% to pass</span>
                 </div>
                 @if (isEnrolled()) {
-                  <button class="btn btn--sm btn--outline" [routerLink]="['/quiz', quiz.quizId, 'take']">Start</button>
+                  <button class="btn btn--sm btn--outline" [routerLink]="['/quiz', quiz.id, 'take']">Start</button>
                 } @else {
                   <span style="color:var(--text-muted);font-size:16px">🔒</span>
                 }
@@ -190,46 +191,236 @@ export class CourseDetailComponent implements OnInit {
   enrollCount = signal<number | null>(null);
   payMode     = 'CARD';
 
+  
   ngOnInit() {
-    const id = +this.route.snapshot.paramMap.get('id')!;
-    this.courseService.getCourseById(id).subscribe(c => {
-      this.course.set(c);
-      this.lessonService.getLessonsByCourse(id).subscribe(l => this.lessons.set(l));
-      this.assessService.getQuizzesByCourse(id).subscribe(q => this.quizzes.set(q));
+    
+  const id = +this.route.snapshot.paramMap.get('id')!;
+  this.courseService.getCourseById(id).subscribe(c => {
+    
+    this.course.set(c);
+    this.lessonService.getLessonsByCourse(id).subscribe(l => this.lessons.set(l));
+    this.assessService.getQuizzesByCourse(id).subscribe(q => this.quizzes.set(q));
+    
+    if (this.auth.isLoggedIn()) {
+      // ✅ Only call enrollment APIs when user is logged in
       this.enrollService.getEnrollmentCount(id).subscribe(r => this.enrollCount.set(r.count));
-      if (this.auth.isLoggedIn()) {
-        this.enrollService.isEnrolled(id).subscribe(r => this.isEnrolled.set(r.enrolled));
-      }
-      this.loading.set(false);
-    });
-  }
+      this.enrollService.isEnrolled(id).subscribe(r => this.isEnrolled.set(r.enrolled));
+    }
+    this.loading.set(false);
+  });
+}
 
   enrollFree() {
     this.enrolling.set(true);
-    this.enrollService.enroll(this.course()!.courseId).subscribe({
+    this.enrollService.enroll(this.course()!.id).subscribe({
       next: () => { this.enrolling.set(false); this.isEnrolled.set(true); this.toast.success('Enrolled successfully!'); },
       error: e  => { this.enrolling.set(false); this.toast.error(e.error?.message || 'Enrollment failed'); }
     });
   }
+//   buyNow() {
+//   const course = this.course();
 
-  buyNow() {
-    this.enrolling.set(true);
-    this.paymentService.processPayment({
-      courseId: this.course()!.courseId,
-      amount: this.course()!.price,
-      mode: this.payMode,
-      currency: 'INR',
-    }).subscribe({
-      next: () => {
-        this.enrollService.enroll(this.course()!.courseId).subscribe({
-          next: () => {
-            this.enrolling.set(false); this.showPayment.set(false);
-            this.isEnrolled.set(true);
-            this.toast.success('Payment successful! You are enrolled.');
-          }
-        });
-      },
-      error: e => { this.enrolling.set(false); this.toast.error(e.error?.message || 'Payment failed'); }
-    });
+//   // ✅ ADD THIS BLOCK (IMPORTANT DEBUG + SAFETY)
+//   if (!course || !course.id) {
+//     console.error("Course not loaded ❌", course);
+//     return;
+//   }
+
+//   console.log("FULL COURSE OBJECT 👉", course);
+
+//   console.log("Sending Payment Data 👉", {
+//     courseId: course.id,
+//     courseTitle: course.title,
+//     amount: Math.round(course.price)
+//   });
+
+//   // ✅ FIXED API CALL
+//   this.paymentService.createOrder(
+//     course.id,
+//     course.title,
+//     Math.round(course.price)
+//   ).subscribe({
+//     next: (res) => {
+//       console.log("Order Created ✅", res);
+//     },
+//     error: (err) => {
+//       console.error("Payment Error ❌", err);
+//     }
+//   });
+// }
+
+buyNow() {
+  const course = this.course();
+
+  if (!course || !course.id) {
+    console.error("Course not loaded ❌", course);
+    return;
   }
+
+  this.enrolling.set(true);
+
+  // const amount = Math.round(Number(course.price) * 100); // ✅ FIX: convert to paise
+  const amount = Number(course.price);
+
+  console.log("FINAL PAYMENT DATA 👉", {
+    courseId: course.id,
+    courseTitle: course.title,
+    amount: amount
+  });
+
+  // ✅ STEP 1: Create Order
+  this.paymentService.createOrder(
+    course.id,
+    course.title,
+    amount
+  ).subscribe({
+
+    next: (orderData) => {
+      this.enrolling.set(false);
+
+      console.log("Order Created ✅", orderData);
+
+      const user = this.auth.user();
+
+      // ✅ STEP 2: Open Razorpay
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Learnify',
+        description: course.title,
+        order_id: orderData.orderId,
+
+        prefill: {
+          name: user?.fullName || '',
+          email: user?.email || ''
+        },
+
+        handler: (response: any) => {
+          this.onPaymentSuccess(response, course);
+        },
+
+        modal: {
+          ondismiss: () => {
+            this.toast.error('Payment cancelled');
+          }
+        }
+      };
+
+      const rzp = new Razorpay(options);
+
+      rzp.on('payment.failed', (response: any) => {
+        this.toast.error(response.error?.description || 'Payment failed');
+      });
+
+      rzp.open();
+    },
+
+    error: (err) => {
+      this.enrolling.set(false);
+      console.error("Payment Error ❌", err);
+      this.toast.error(err.error?.message || 'Failed to create order');
+    }
+  });
+}
+
+//   buyNow() {
+//   const course = this.course();
+//   if (!course) return;
+
+//   this.enrolling.set(true);
+
+//   // STEP 1: Create Razorpay order
+//   this.paymentService.createOrder(
+//     course.id,
+//     course.title,
+//     course.price
+//   ).subscribe({
+
+//     next: (orderData) => {
+//       this.enrolling.set(false);
+
+//       const user = this.auth.user();
+
+//       // STEP 2: Open Razorpay UI
+//       const options = {
+//         key: orderData.keyId,
+//         amount: orderData.amount,
+//         currency: orderData.currency,
+//         name: 'Learnify',
+//         description: course.title,
+//         order_id: orderData.orderId,
+
+//         prefill: {
+//           name: user?.fullName || '',
+//           email: user?.email || ''
+//         },
+
+//         handler: (response: any) => {
+//           this.onPaymentSuccess(response, course);
+//         },
+
+//         modal: {
+//           ondismiss: () => {
+//             this.toast.error('Payment cancelled');
+//           }
+//         }
+//       };
+
+//       const rzp = new Razorpay(options);
+
+//       rzp.on('payment.failed', (response: any) => {
+//         this.toast.error(response.error?.description || 'Payment failed');
+//       });
+
+//       rzp.open();
+//     },
+
+//     error: (err) => {
+//       this.enrolling.set(false);
+//       this.toast.error('Failed to create order');
+//       console.error(err);
+//     }
+//   });
+// }
+private onPaymentSuccess(response: any, course: any) {
+
+  this.enrolling.set(true);
+
+  // STEP 3: Verify payment
+  this.paymentService.verifyPayment({
+    razorpayOrderId: response.razorpay_order_id,
+    razorpayPaymentId: response.razorpay_payment_id,
+    razorpaySignature: response.razorpay_signature,
+    courseId: course.id,
+    courseTitle: course.title,
+    amount: course.price
+  }).subscribe({
+
+    next: () => {
+
+      // STEP 4: Enroll user
+      this.enrollService.enroll(course.id).subscribe({
+
+        next: () => {
+          this.enrolling.set(false);
+          this.showPayment.set(false);
+          this.isEnrolled.set(true);
+
+          this.toast.success('🎉 Payment successful! Enrolled.');
+        },
+
+        error: () => {
+          this.enrolling.set(false);
+          this.toast.error('Payment done but enrollment failed');
+        }
+      });
+    },
+
+    error: () => {
+      this.enrolling.set(false);
+      this.toast.error('Payment verification failed');
+    }
+  });
+}
 }

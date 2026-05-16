@@ -79,8 +79,8 @@ import { Quiz, Question, Attempt } from '../../../core/models';
 
             <div class="options-list">
               @for (opt of currentQuestion()!.options; track opt; let i = $index) {
-                <label class="option-item" [class.selected]="answers()[currentQuestion()!.questionId] === opt">
-                  <input type="radio" [name]="'q_' + currentQuestion()!.questionId"
+                <label class="option-item" [class.selected]="answers()[currentQuestion()!.id] === opt">
+                  <input type="radio" [name]="'q_' + currentQuestion()!.id"
                     [value]="opt" (change)="selectAnswer(opt)">
                   <span class="option-letter">{{ letters[i] }}</span>
                   <span class="option-text">{{ opt }}</span>
@@ -94,9 +94,9 @@ import { Quiz, Question, Attempt } from '../../../core/models';
         <div class="quiz-nav">
           <button class="btn btn--outline" (click)="prevQ()" [disabled]="currentIdx() === 0">← Previous</button>
           <div class="quiz-dots">
-            @for (q of questions(); track q.questionId; let i = $index) {
+            @for (q of questions(); track q.id; let i = $index) {
               <div class="quiz-dot"
-                [class.answered]="!!answers()[q.questionId]"
+                [class.answered]="!!answers()[q.id]"
                 [class.current]="i === currentIdx()"
                 (click)="goTo(i)">
                 {{ i + 1 }}
@@ -183,16 +183,27 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.quizId = +this.route.snapshot.paramMap.get('quizId')!;
-    this.loading.set(true);
-    this.assessSvc.getQuizById(this.quizId).subscribe(q => {
-      this.quiz.set(q);
-      this.assessSvc.getQuestions(this.quizId).subscribe(qs => {
-        this.questions.set(qs);
-        this.loading.set(false);
-      });
-    });
+  const id = this.route.snapshot.paramMap.get('quizId');
+
+  console.log("Route quizId 👉", id);
+
+  if (!id || isNaN(Number(id))) {
+    console.error("Invalid quizId ❌", id);
+    this.toast.error("Invalid Quiz ID");
+    return;
   }
+
+  this.quizId = Number(id);
+
+  this.loading.set(true);
+  this.assessSvc.getQuizById(this.quizId).subscribe(q => {
+    this.quiz.set(q);
+    this.assessSvc.getQuestions(this.quizId).subscribe(qs => {
+      this.questions.set(qs);
+      this.loading.set(false);
+    });
+  });
+}
 
   ngOnDestroy() { clearInterval(this.timer); }
 
@@ -220,7 +231,7 @@ export class QuizTakeComponent implements OnInit, OnDestroy {
   }
 
   selectAnswer(opt: string) {
-    const qId = this.currentQuestion()!.questionId;
+    const qId = this.currentQuestion()!.id;
     this.answers.update(a => ({ ...a, [qId]: opt }));
   }
 

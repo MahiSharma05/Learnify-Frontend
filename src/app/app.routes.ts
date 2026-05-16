@@ -1,22 +1,49 @@
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard, instructorGuard, guestGuard } from './core/guards/auth.guard';
-
+import { CertificateViewComponent } from './features/student/certificate-view/certificate-view.component';
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) },
   {
-    path: 'auth',
-    children: [
-      { path: 'login',    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
-      { path: 'register', loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent) },
-      { path: 'oauth2/callback', loadComponent: () => import('./features/auth/oauth2-callback/oauth2-callback.component').then(m => m.OAuth2CallbackComponent) },
-      { path: '', redirectTo: 'login', pathMatch: 'full' }
-    ]
-  },
+  path: 'auth',
+  children: [
+
+    {
+      path: 'login',
+      loadComponent: () =>
+        import('./features/auth/login/login.component')
+          .then(m => m.LoginComponent)
+    },
+
+    {
+      path: 'register',
+      loadComponent: () =>
+        import('./features/auth/register/register.component')
+          .then(m => m.RegisterComponent)
+    },
+
+    {
+      path: 'verify-otp',
+      loadComponent: () =>
+        import('./features/auth/verify-otp/verify-otp.component')
+          .then(m => m.VerifyOtpComponent)
+    },
+
+    {
+      path: 'oauth2/callback',
+      loadComponent: () =>
+        import('./features/auth/oauth2-callback/oauth2-callback.component')
+          .then(m => m.OAuth2CallbackComponent)
+    },
+
+    { path: '', redirectTo: 'login', pathMatch: 'full' }
+  ]
+},
   {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./layout/main-layout/main-layout.component').then(m => m.MainLayoutComponent),
     children: [
+      { path: 'certificate/:id', component: CertificateViewComponent },
       { path: 'dashboard',   loadComponent: () => import('./features/student/student-dashboard/student-dashboard.component').then(m => m.StudentDashboardComponent) },
       { path: 'courses',     loadComponent: () => import('./features/courses/course-list/course-list.component').then(m => m.CourseListComponent) },
       { path: 'courses/:id', loadComponent: () => import('./features/courses/course-detail/course-detail.component').then(m => m.CourseDetailComponent) },

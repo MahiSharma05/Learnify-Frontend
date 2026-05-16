@@ -40,7 +40,7 @@ import { User } from '../../../core/models';
                 <td style="color:var(--text-muted);font-size:12px">{{ u.userId }}</td>
                 <td>
                   <div style="display:flex;align-items:center;gap:10px">
-                    <div class="avatar-sm">{{ u.fullName[0]?.toUpperCase() }}</div>
+                    <div class="avatar-sm">{{ u.fullName[0].toUpperCase() }}</div>
                     <div>
                       <div style="font-weight:600;font-size:14px">{{ u.fullName }}</div>
                       @if (u.bio) { <div style="font-size:12px;color:var(--text-muted)">{{ u.bio | slice:0:40 }}</div> }

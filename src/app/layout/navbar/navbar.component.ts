@@ -131,10 +131,18 @@ export class NavbarComponent implements OnInit {
   menuOpen      = signal(false);
 
   ngOnInit() {
-    if (this.auth.isLoggedIn()) {
-      this.notifService.getUnreadCount().subscribe();
-    }
+  if (this.auth.isLoggedIn()) {
+    this.notifService.getUnreadCount().subscribe({
+      next: (res) => {
+        this.notifService.unreadCount.set(res.count || 0);
+      },
+      error: (err) => {
+        console.error("Notification count error:", err);
+        this.notifService.unreadCount.set(0);
+      }
+    });
   }
+}
 
   toggleMenu()  { this.menuOpen.update(v => !v); }
   closeMenu()   { this.menuOpen.set(false); }

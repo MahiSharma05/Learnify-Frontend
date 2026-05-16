@@ -50,7 +50,7 @@ import { Payment } from '../../../core/models';
                 <td style="color:var(--text-muted)">{{ p.paidAt | date:'mediumDate' }}</td>
                 <td>
                   @if (p.status === 'SUCCESS') {
-                    <button class="btn btn--outline btn--sm" (click)="refund(p.paymentId)">Refund</button>
+                    <button class="btn btn--outline btn--sm" (click)="p.paymentId && refund(p.paymentId)">Refund</button>
                   }
                 </td>
               </tr>
@@ -72,11 +72,17 @@ export class ManagePaymentsComponent implements OnInit {
 
   ngOnInit() { this.paymentService.getAllPayments().subscribe(p => this.payments.set(p)); }
 
-  refund(id: number) {
-    if (!confirm('Process refund for this payment?')) return;
-    this.paymentService.refundPayment(id).subscribe({
-      next: () => { this.toast.success('Refund processed'); this.ngOnInit(); },
-      error: () => this.toast.error('Refund failed')
-    });
-  }
+  refund(id?: number) {
+  if (!id) return;
+
+  if (!confirm('Process refund for this payment?')) return;
+
+  this.paymentService.refundPayment(id).subscribe({
+    next: () => {
+      this.toast.success('Refund processed');
+      this.ngOnInit();
+    },
+    error: () => this.toast.error('Refund failed')
+  });
+}
 }

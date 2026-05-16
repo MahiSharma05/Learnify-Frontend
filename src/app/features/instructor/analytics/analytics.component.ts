@@ -50,18 +50,18 @@ import { Course, Enrollment } from '../../../core/models';
             </tr>
           </thead>
           <tbody>
-            @for (c of courses(); track c.courseId) {
+            @for (c of courses(); track c.id) {
               <tr>
                 <td style="font-weight:600">{{ c.title }}</td>
                 <td>
-                  <span class="badge" [class]="c.isPublished ? 'badge--success' : 'badge--muted'">
-                    {{ c.isPublished ? 'Published' : 'Draft' }}
+                  <span class="badge" [class]="c.published ? 'badge--success' : 'badge--muted'">
+                    {{ c.published ? 'Published' : 'Draft' }}
                   </span>
                 </td>
                 <td>{{ c.price === 0 ? 'Free' : '₹' + c.price }}</td>
-                <td>{{ enrollCountMap()[c.courseId] || 0 }}</td>
+                <td>{{ enrollCountMap()[c.id] || 0 }}</td>
                 <td style="font-weight:700;color:var(--primary)">
-                  ₹{{ c.price * (enrollCountMap()[c.courseId] || 0) }}
+                  ₹{{ c.price * (enrollCountMap()[c.id] || 0) }}
                 </td>
               </tr>
             }
@@ -73,15 +73,15 @@ import { Course, Enrollment } from '../../../core/models';
     @if (courses().length > 0) {
       <h2 class="section-title" style="margin-top:28px">Enrollment by Course</h2>
       <div class="card">
-        @for (c of courses(); track c.courseId) {
+        @for (c of courses(); track c.id) {
           <div style="margin-bottom:16px">
             <div style="display:flex;justify-content:space-between;margin-bottom:6px">
               <span style="font-size:14px;font-weight:500">{{ c.title }}</span>
-              <span style="font-size:13px;color:var(--text-muted)">{{ enrollCountMap()[c.courseId] || 0 }} students</span>
+              <span style="font-size:13px;color:var(--text-muted)">{{ enrollCountMap()[c.id] || 0 }} students</span>
             </div>
             <div class="progress-bar" style="height:12px">
               <div class="progress-bar__fill"
-                [style.width.%]="barWidth(c.courseId)">
+                [style.width.%]="barWidth(c.id)">
               </div>
             </div>
           </div>
@@ -103,7 +103,7 @@ export class AnalyticsComponent implements OnInit {
   completionRate = () => 0; // Would need per-enrollment progress data
 
   estimatedRevenue = () => {
-    return this.courses().reduce((s, c) => s + (c.price * (this.enrollCountMap()[c.courseId] || 0)), 0);
+    return this.courses().reduce((s, c) => s + (c.price * (this.enrollCountMap()[c.id] || 0)), 0);
   };
 
   maxEnrolls = () => Math.max(...Object.values(this.enrollCountMap()), 1);
@@ -116,8 +116,8 @@ export class AnalyticsComponent implements OnInit {
     this.courseService.getCoursesByInstructor(this.auth.user()!.userId).subscribe(courses => {
       this.courses.set(courses);
       courses.forEach(c => {
-        this.enrollService.getEnrollmentCount(c.courseId).subscribe(r => {
-          this.enrollCountMap.update(m => ({ ...m, [c.courseId]: r.count }));
+        this.enrollService.getEnrollmentCount(c.id).subscribe(r => {
+          this.enrollCountMap.update(m => ({ ...m, [c.id]: r.count }));
         });
       });
     });

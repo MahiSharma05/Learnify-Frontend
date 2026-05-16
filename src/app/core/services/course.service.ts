@@ -10,14 +10,42 @@ export class CourseService {
 
   constructor(private http: HttpClient) {}
 
-  getAllCourses(params?: { category?: string; level?: string; keyword?: string; language?: string }): Observable<Course[]> {
-    let p = new HttpParams();
-    if (params?.category) p = p.set('category', params.category);
-    if (params?.level)    p = p.set('level', params.level);
-    if (params?.keyword)  p = p.set('keyword', params.keyword);
-    if (params?.language) p = p.set('language', params.language);
-    return this.http.get<Course[]>(this.base, { params: p });
+  getAllCourses(params?: {
+  category?: string;
+  level?: string;
+  keyword?: string;
+  language?: string;
+  admin?: boolean;
+}): Observable<Course[]> {
+
+  // ADMIN → ALL courses
+  if (params?.admin) {
+
+    return this.http.get<Course[]>(
+      `${this.base}/admin/all`
+    );
   }
+
+  // STUDENT → only published courses
+  let p = new HttpParams();
+
+  if (params?.category)
+    p = p.set('category', params.category);
+
+  if (params?.level)
+    p = p.set('level', params.level);
+
+  if (params?.keyword)
+    p = p.set('keyword', params.keyword);
+
+  if (params?.language)
+    p = p.set('language', params.language);
+
+  return this.http.get<Course[]>(
+    this.base,
+    { params: p }
+  );
+}
 
   getCourseById(id: number): Observable<Course> {
     return this.http.get<Course>(`${this.base}/${id}`);
@@ -49,9 +77,15 @@ export class CourseService {
     return this.http.put<Course>(`${this.base}/${id}`, req);
   }
 
-  publishCourse(id: number): Observable<void> {
-    return this.http.put<void>(`${this.base}/${id}/publish`, {});
-  }
+  // publishCourse(id: number): Observable<void> {
+  //   return this.http.put<void>(`${this.base}/${id}/publish`, {});
+  // }
+
+  publishCourse(id: number): Observable<any> {
+  return this.http.put(`${this.base}/${id}/publish`, {}, {
+    responseType: 'text' as 'json'
+  });
+}
 
   unpublishCourse(id: number): Observable<void> {
     return this.http.put<void>(`${this.base}/${id}/unpublish`, {});
@@ -61,11 +95,25 @@ export class CourseService {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
-  approveCourse(id: number): Observable<void> {
-    return this.http.put<void>(`${this.base}/${id}/approve`, {});
-  }
+  approveCourse(id: number): Observable<any> {
 
-  rejectCourse(id: number, reason: string): Observable<void> {
-    return this.http.put<void>(`${this.base}/${id}/reject`, { reason });
-  }
+  return this.http.put(
+    `${this.base}/admin/${id}/approve`,
+    {},
+    {
+      responseType: 'text' as 'json'
+    }
+  );
+}
+
+  rejectCourse(id: number): Observable<any> {
+
+  return this.http.put(
+    `${this.base}/admin/${id}/reject`,
+    {},
+    {
+      responseType: 'text' as 'json'
+    }
+  );
+}
 }
