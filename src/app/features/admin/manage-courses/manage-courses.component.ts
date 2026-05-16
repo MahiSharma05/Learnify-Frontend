@@ -29,7 +29,7 @@ import { Course } from '../../../core/models';
             <tr><th>Course</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            @for (c of filtered(); track c.courseId) {
+            @for (c of filtered(); track c.id) {
               <tr>
                 <td>
                   <div style="display:flex;align-items:center;gap:12px">
@@ -44,18 +44,18 @@ import { Course } from '../../../core/models';
                 <td>{{ c.category }}</td>
                 <td style="font-weight:700">{{ c.price === 0 ? 'Free' : '₹' + c.price }}</td>
                 <td>
-                  <span class="badge" [class]="c.isPublished ? 'badge--success' : 'badge--warning'">
-                    {{ c.isPublished ? 'Published' : 'Pending' }}
+                  <span class="badge" [class]="c.published ? 'badge--success' : 'badge--warning'">
+                    {{ c.published ? 'Published' : 'Pending' }}
                   </span>
                 </td>
                 <td>
                   <div style="display:flex;gap:6px">
-                    <a [routerLink]="['/courses', c.courseId]" class="btn btn--ghost btn--sm">View</a>
-                    @if (!c.isPublished) {
-                      <button class="btn btn--success btn--sm" (click)="approve(c.courseId)">✓ Approve</button>
-                      <button class="btn btn--danger btn--sm"  (click)="reject(c.courseId)">✗ Reject</button>
+                    <a [routerLink]="['/courses', c.id]" class="btn btn--ghost btn--sm">View</a>
+                    @if (!c.published) {
+                      <button class="btn btn--success btn--sm" (click)="approve(c.id)">✓ Approve</button>
+                      <button class="btn btn--danger btn--sm"  (click)="reject(c.id)">✗ Reject</button>
                     } @else {
-                      <button class="btn btn--outline btn--sm" (click)="unpublish(c.courseId)">Unpublish</button>
+                      <button class="btn btn--outline btn--sm" (click)="unpublish(c.id)">Unpublish</button>
                     }
                     <button class="btn btn--danger btn--sm" (click)="deleteCourse(c)">Delete</button>
                   </div>
@@ -86,20 +86,20 @@ export class AdminManageCoursesComponent implements OnInit {
     this.filtered.set(this.allCourses().filter(c => {
       const matchSearch = !s || c.title.toLowerCase().includes(s) || c.category.toLowerCase().includes(s);
       const matchStatus = !this.statusFilter ||
-        (this.statusFilter === 'published' && c.isPublished) ||
-        (this.statusFilter === 'draft' && !c.isPublished);
+        (this.statusFilter === 'published' && c.published) ||
+        (this.statusFilter === 'draft' && !c.published);
       return matchSearch && matchStatus;
     }));
   }
 
   approve(id: number)   { this.courseService.approveCourse(id).subscribe(() => { this.toast.success('Course approved'); this.ngOnInit(); }); }
-  reject(id: number)    { this.courseService.rejectCourse(id, 'Does not meet guidelines').subscribe(() => { this.toast.warning('Course rejected'); this.ngOnInit(); }); }
+  reject(id: number)    { this.courseService.rejectCourse(id).subscribe(() => { this.toast.warning('Course rejected'); this.ngOnInit(); }); }
   unpublish(id: number) { this.courseService.unpublishCourse(id).subscribe(() => { this.toast.info('Course unpublished'); this.ngOnInit(); }); }
 
   deleteCourse(c: Course) {
     if (!confirm(`Delete "${c.title}"?`)) return;
-    this.courseService.deleteCourse(c.courseId).subscribe({
-      next: () => { this.toast.success('Course deleted'); this.allCourses.update(list => list.filter(x => x.courseId !== c.courseId)); this.filterCourses(); },
+    this.courseService.deleteCourse(c.id).subscribe({
+      next: () => { this.toast.success('Course deleted'); this.allCourses.update(list => list.filter(x => x.id !== c.id)); this.filterCourses(); },
       error: () => this.toast.error('Failed to delete course')
     });
   }

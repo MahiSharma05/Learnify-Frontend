@@ -136,7 +136,7 @@ export class PlatformAnalyticsComponent implements OnInit {
       this.stats.update(s => ({
         ...s,
         courses:          courses.length,
-        publishedCourses: courses.filter(c => c.isPublished).length,
+        publishedCourses: courses.filter(c => c.published).length,
       }));
     });
 

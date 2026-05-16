@@ -56,20 +56,20 @@ import { Course } from '../../../core/models';
       </div>
     } @else {
       <div class="grid grid--auto">
-        @for (c of courses().slice(0, 4); track c.courseId) {
+        @for (c of courses().slice(0, 4); track c.id) {
           <div class="card card--hover">
             <img [src]="c.thumbnailUrl || 'assets/default-course.svg'"
               style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:#eef2ff;margin-bottom:14px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
               <h4 style="font-size:14px;font-weight:700;flex:1">{{ c.title }}</h4>
-              <span class="badge" [class]="c.isPublished ? 'badge--success' : 'badge--muted'">
-                {{ c.isPublished ? 'Live' : 'Draft' }}
+              <span class="badge" [class]="c.published ? 'badge--success' : 'badge--muted'">
+                {{ c.published ? 'Live' : 'Draft' }}
               </span>
             </div>
             <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">{{ c.category }} · {{ c.level }}</p>
             <div style="display:flex;gap:8px">
-              <a [routerLink]="['/instructor/courses', c.courseId, 'edit']" class="btn btn--outline btn--sm">Edit</a>
-              <a [routerLink]="['/instructor/courses', c.courseId, 'lessons']" class="btn btn--ghost btn--sm">Lessons</a>
+              <a [routerLink]="['/instructor/courses', c.id, 'edit']" class="btn btn--outline btn--sm">Edit</a>
+              <a [routerLink]="['/instructor/courses', c.id, 'lessons']" class="btn btn--ghost btn--sm">Lessons</a>
             </div>
           </div>
         }
@@ -96,14 +96,14 @@ export class InstructorDashboardComponent implements OnInit {
   courses          = signal<Course[]>([]);
   totalEnrollments = signal(0);
 
-  published = () => this.courses().filter(c => c.isPublished);
+  published = () => this.courses().filter(c => c.published);
 
   ngOnInit() {
     const uid = this.auth.user()!.userId;
     this.courseService.getCoursesByInstructor(uid).subscribe(c => {
       this.courses.set(c);
       c.forEach(course => {
-        this.enrollService.getEnrollmentCount(course.courseId).subscribe(r => {
+        this.enrollService.getEnrollmentCount(course.id).subscribe(r => {
           this.totalEnrollments.update(t => t + r.count);
         });
       });

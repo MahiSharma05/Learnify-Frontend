@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { EnrollmentService } from '../../../core/services/enrollment.service';
 import { Enrollment } from '../../../core/models';
+import { ProgressService } from '../../../core/services/progress.service';
 
 @Component({
   selector: 'app-my-progress',
@@ -21,7 +22,7 @@ import { Enrollment } from '../../../core/models';
       </div>
     } @else {
       <div class="grid grid--auto">
-        @for (e of enrollments(); track e.enrollmentId) {
+        @for (e of enrollments(); track e.id) {
           <div class="card">
             <h4 style="font-weight:700;margin-bottom:4px">{{ e.courseTitle || 'Course #' + e.courseId }}</h4>
             <span class="badge badge--muted" style="margin-bottom:16px;display:inline-block">{{ e.status }}</span>
@@ -51,8 +52,23 @@ import { Enrollment } from '../../../core/models';
     }
   `
 })
+
 export class MyProgressComponent implements OnInit {
   enrollService = inject(EnrollmentService);
+  progressService = inject(ProgressService);
   enrollments   = signal<Enrollment[]>([]);
-  ngOnInit() { this.enrollService.getMyEnrollments().subscribe(e => this.enrollments.set(e)); }
+  ngOnInit() {
+  this.enrollService.getMyEnrollments().subscribe(enrollments => {
+    this.enrollments.set(enrollments);
+    enrollments.forEach(e => {
+      this.progressService.getCourseProgress(e.courseId).subscribe(res => {
+        e.progressPercent = res.percent;   
+        this.enrollments.set([...enrollments]);
+
+      });
+
+    });
+
+  });
+}
 }

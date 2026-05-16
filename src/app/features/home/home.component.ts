@@ -120,8 +120,8 @@ import { Router } from '@angular/router';
           </div>
         } @else {
           <div class="featured-grid">
-            @for (course of featured(); track course.courseId) {
-              <div class="feat-card" [routerLink]="['/courses', course.courseId]">
+            @for (course of featured(); track course.id) {
+              <div class="feat-card" [routerLink]="['/courses', course.id]">
                 <div class="feat-card__thumb">
                   <img [src]="course.thumbnailUrl || 'assets/default-course.svg'" [alt]="course.title">
                 </div>

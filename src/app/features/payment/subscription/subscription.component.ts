@@ -107,11 +107,14 @@ export class SubscriptionComponent implements OnInit {
   }
 
   cancel() {
-    if (!confirm('Cancel your subscription?')) return;
-    this.loading.set(true);
-    this.paymentService.cancelSubscription().subscribe({
-      next: () => { this.current.set(null); this.loading.set(false); this.toast.success('Subscription cancelled'); },
-      error: () => { this.loading.set(false); this.toast.error('Failed to cancel'); }
-    });
-  }
+  if (!confirm('Cancel your subscription?')) return;
+  const sub = this.current();
+  if (!sub) return;
+  this.loading.set(true);
+  // Backend DELETE /api/subscriptions/{id}
+  this.paymentService.cancelSubscription((sub as any).id).subscribe({
+    next: () => { this.current.set(null); this.loading.set(false); this.toast.success('Subscription cancelled'); },
+    error: () => { this.loading.set(false); this.toast.error('Failed to cancel'); }
+  });
+}
 }

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Lesson, LessonRequest, Resource } from '../models';
+import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class LessonService {
@@ -10,9 +11,19 @@ export class LessonService {
 
   constructor(private http: HttpClient) {}
 
+  // getLessonsByCourse(courseId: number): Observable<Lesson[]> {
+  //   return this.http.get<Lesson[]>(`${this.base}/course/${courseId}`);
+  // }
   getLessonsByCourse(courseId: number): Observable<Lesson[]> {
-    return this.http.get<Lesson[]>(`${this.base}/course/${courseId}`);
-  }
+  return this.http.get<any[]>(`${this.base}/course/${courseId}`).pipe(
+    map(list =>
+      list.map(l => ({
+        ...l,
+        lessonId: l.id   // ✅ CONVERT id → lessonId
+      }))
+    )
+  );
+}
 
   getLessonById(id: number): Observable<Lesson> {
     return this.http.get<Lesson>(`${this.base}/${id}`);

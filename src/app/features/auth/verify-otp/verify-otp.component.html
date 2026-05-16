@@ -1,0 +1,14 @@
+<div class="otp-container">
+  <h2>Email Verification</h2>
+
+  <p>
+    OTP sent to:
+    <b>{{ email }}</b>
+  </p>
+
+  <input type="text" [(ngModel)]="otp" placeholder="Enter OTP" maxlength="6" />
+
+  <button (click)="verifyOtp()">Verify OTP</button>
+
+  <button (click)="resendOtp()">Resend OTP</button>
+</div>
