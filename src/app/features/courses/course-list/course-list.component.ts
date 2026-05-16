@@ -58,9 +58,9 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
         </div>
       } @else {
         <div class="grid grid--auto">
-          @for (course of courses(); track course.courseId) {
+          @for (course of courses(); track course.id) {
             <div class="course-card-wrap">
-              <div class="course-card" (click)="goToDetail(course.courseId)">
+              <div class="course-card" (click)="goToDetail(course.id)">
                 <div class="course-card__thumb">
                   <img [src]="course.thumbnailUrl || 'assets/default-course.svg'" [alt]="course.title" loading="lazy">
                   <span class="course-card__level">{{ course.level }}</span>
@@ -76,8 +76,8 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
                   <div class="course-card__footer">
                     <strong class="price">{{ course.price === 0 ? 'Free' : ('₹' + course.price) }}</strong>
                     @if (auth.isLoggedIn()) {
-                      @if (isEnrolled(course.courseId)) {
-                        <button class="btn btn--sm btn--success" (click)="$event.stopPropagation(); continueLearning(course.courseId)">Continue</button>
+                      @if (isEnrolled(course.id)) {
+                        <button class="btn btn--sm btn--success" (click)="$event.stopPropagation(); continueLearning(course.id)">Continue</button>
                       } @else {
                         <button class="btn btn--sm btn--primary" (click)="$event.stopPropagation(); enroll(course)">Enroll Now</button>
                       }
@@ -182,15 +182,42 @@ export class CourseListComponent implements OnInit {
   goToDetail(id: number)  { this.router.navigate(['/courses', id]); }
   continueLearning(id: number) { this.router.navigate(['/courses', id, 'learn']); }
 
-  enroll(course: Course) {
-    if (!this.auth.isLoggedIn()) { this.router.navigate(['/auth/login']); return; }
-    if (course.price === 0) {
-      this.enrollService.enroll(course.courseId).subscribe({
-        next: () => { this.toast.success('Enrolled successfully!'); this.loadEnrollments(); },
-        error: e => this.toast.error(e.error?.message || 'Enrollment failed')
-      });
-    } else {
-      this.router.navigate(['/courses', course.courseId]);
-    }
+  enroll(course: any) {
+  const id = course.courseId || course.id;
+
+  if (!id) {
+    console.error("❌ Course ID missing", course);
+    return;
   }
+
+  if (!this.auth.isLoggedIn()) {
+    this.router.navigate(['/auth/login']);
+    return;
+  }
+
+  if (course.price === 0) {
+
+  this.enrollService.enroll(
+    id,
+    course.title,
+    course.thumbnailUrl
+  ).subscribe({
+
+    next: () => {
+
+      this.toast.success('Enrolled successfully!');
+
+      this.loadEnrollments();
+
+    },
+
+    error: e =>
+      this.toast.error(
+        e.error?.message || 'Enrollment failed'
+      )
+  });
+} else {
+    this.router.navigate(['/courses', id]);
+  }
+}
 }

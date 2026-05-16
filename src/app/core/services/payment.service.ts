@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Payment, PaymentRequest, Subscription } from '../models';
+import { Payment, Subscription } from '../models';
+import { catchError, of } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class PaymentService {
@@ -11,8 +12,35 @@ export class PaymentService {
 
   constructor(private http: HttpClient) {}
 
-  processPayment(req: PaymentRequest): Observable<Payment> {
-    return this.http.post<Payment>(this.payBase, req);
+  // ================= RAZORPAY =================
+
+  // STEP 1: Create Razorpay Order
+  // NO manual headers needed — auth.interceptor adds Bearer token automatically.
+  // API Gateway reads the token and sets X-User-Id, X-User-Email, X-User-Role.
+  createOrder(courseId: number, courseTitle: string, amount: number): Observable<any> {
+    return this.http.post<any>(`${this.payBase}/create-order`, {
+      courseId,
+      courseTitle,
+      amount
+    });
+  }
+
+  // STEP 2: Verify Payment after Razorpay success callback
+  verifyPayment(data: {
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+    courseId: number;
+    courseTitle: string;
+    amount: number;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.payBase}/verify`, data);
+  }
+
+  // ================= EXISTING (keep) =================
+
+  processPayment(data: any): Observable<any> {
+    return this.http.post<any>(`${this.payBase}`, data);
   }
 
   getMyPayments(): Observable<Payment[]> {
@@ -27,21 +55,28 @@ export class PaymentService {
     return this.http.post<Payment>(`${this.payBase}/${paymentId}/refund`, {});
   }
 
-  // Subscriptions
+  // ================= SUBSCRIPTIONS =================
+
   subscribe(plan: string): Observable<Subscription> {
-    return this.http.post<Subscription>(this.subBase, { plan });
+    return this.http.post<Subscription>(this.subBase, {
+      plan,
+      paymentMode: 'CARD',
+      autoRenew: false
+    });
   }
 
-  getMySubscription(): Observable<Subscription> {
-    return this.http.get<Subscription>(`${this.subBase}/my`);
+  getMySubscription(): Observable<Subscription | null> {
+    return this.http.get<Subscription>(`${this.subBase}/my`).pipe(
+      catchError(() => of(null as any))
+    );
   }
 
-  cancelSubscription(): Observable<void> {
-    return this.http.put<void>(`${this.subBase}/cancel`, {});
+  cancelSubscription(subscriptionId: number): Observable<any> {
+    return this.http.post<any>(`${this.subBase}/${subscriptionId}/cancel`, {});
   }
 
-  renewSubscription(): Observable<Subscription> {
-    return this.http.post<Subscription>(`${this.subBase}/renew`, {});
+  renewSubscription(subscriptionId: number): Observable<Subscription> {
+    return this.http.put<Subscription>(`${this.subBase}/${subscriptionId}/renew`, {});
   }
 
   isActive(): Observable<{ active: boolean }> {

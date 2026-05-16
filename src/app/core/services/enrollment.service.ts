@@ -10,9 +10,21 @@ export class EnrollmentService {
 
   constructor(private http: HttpClient) {}
 
-  enroll(courseId: number): Observable<Enrollment> {
-    return this.http.post<Enrollment>(this.base, { courseId });
-  }
+  enroll(
+  courseId: number,
+  courseTitle?: string,
+  courseThumbnail?: string
+): Observable<Enrollment> {
+
+  return this.http.post<Enrollment>(
+    this.base,
+    {
+      courseId,
+      courseTitle,
+      courseThumbnail
+    }
+  );
+}
 
   unenroll(enrollmentId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${enrollmentId}`);

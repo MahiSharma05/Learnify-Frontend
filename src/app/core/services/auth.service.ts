@@ -28,6 +28,27 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.base}/api/auth/register`, req);
   }
 
+  verifyOtp(data: any) {
+
+  return this.http.post(
+    `${this.base}/api/auth/verify-otp`,
+    data,
+    {
+      responseType: 'text'
+    }
+  );
+}
+
+resendOtp(email: string) {
+
+  return this.http.post(
+    `${this.base}/api/auth/resend-otp?email=${email}`,
+    {},
+    {
+      responseType: 'text'
+    }
+  );
+}
   login(req: LoginRequest): Observable<AuthResponse> {
   return this.http.post<AuthResponse>(
     `${this.base}/api/auth/login`,
@@ -103,21 +124,21 @@ handleOAuthCallback(token: string): void {
 
 
   private persist(res: AuthResponse): void {
-    localStorage.setItem(this.TOKEN_KEY, res.token);
-    this._token.set(res.token);
+  localStorage.setItem(this.TOKEN_KEY, res.token);
+  this._token.set(res.token);
 
-    if (res.email) {
-      const user: User = {
-        userId: res.userId,
-        fullName: res.fullName,
-        email: res.email,
-        role: res.role,
-        profilePicUrl: res.profilePicUrl
-      };
-      localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-      this._user.set(user);
-    }
+  if (res.email) {
+    const user: User = {
+      userId: res.userId,
+      fullName: res.fullName || '',
+      email: res.email,
+      role: res.role,
+      profilePicUrl: res.profilePicUrl
+    };
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    this._user.set(user);
   }
+}
 
   private loadToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);

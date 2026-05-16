@@ -8,6 +8,7 @@ import { AssessmentService } from '../../../core/services/assessment.service';
 import { EnrollmentService } from '../../../core/services/enrollment.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Lesson, Quiz, Course } from '../../../core/models';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-course-learn',
@@ -43,9 +44,9 @@ import { Lesson, Quiz, Course } from '../../../core/models';
         @if (quizzes().length > 0) {
           <div class="quiz-section">
             <h4>Quizzes</h4>
-            @for (q of quizzes(); track q.quizId) {
+            @for (q of quizzes(); track q.id) {
               <button class="btn btn--outline btn--sm btn--full" style="margin-bottom:8px"
-                [routerLink]="['/quiz', q.quizId, 'take']">
+                [routerLink]="['/quiz', q.id, 'take']">
                 📝 {{ q.title }}
               </button>
             }
@@ -178,9 +179,18 @@ export class CourseLearnComponent implements OnInit {
   }
 
   selectLesson(lesson: Lesson) {
-    this.current.set(lesson);
-    this.progressService.trackProgress(this.courseId, lesson.lessonId, 0).subscribe();
-  }
+  this.current.set(lesson);
+
+  const totalSeconds = (lesson.durationMinutes || 0) * 60; 
+
+  this.progressService.trackProgress(
+    this.courseId,
+    lesson.lessonId,
+    0,
+    totalSeconds
+     
+  ).subscribe();
+}
 
   markComplete(lesson: Lesson) {
     this.progressService.markLessonComplete(this.courseId, lesson.lessonId).subscribe(() => {
@@ -205,21 +215,79 @@ export class CourseLearnComponent implements OnInit {
   }
 
   getCertificate() {
-    this.progressService.issueCertificate(this.courseId).subscribe({
-      next: () => { this.toast.success('Certificate issued!'); this.router.navigate(['/certificates']); },
-      error: e  => this.toast.error(e.error?.message || 'Could not issue certificate')
-    });
-  }
+  const c = this.course();
+  this.progressService.issueCertificate(
+    this.courseId,
+    c?.title || 'Course',
+    ''   // studentName — backend uses email as fallback
+  ).subscribe({
+    next: () => { this.toast.success('🏆 Certificate issued!'); this.router.navigate(['/certificates']); },
+    error: e  => this.toast.error(e.error?.message || 'Could not issue certificate')
+  });
+}
 
   isYoutube(url: string) { return url?.includes('youtube.com') || url?.includes('youtu.be'); }
-  safeYoutubeUrl(url: string) {
-    const id = url?.includes('watch?v=') ? url.split('watch?v=')[1].split('&')[0] : url?.split('/').pop();
-    return `https://www.youtube.com/embed/${id}`;
+  private sanitizer = inject(DomSanitizer);
+
+// safeYoutubeUrl(url: string): SafeResourceUrl {
+//   const id = url?.includes('watch?v=')
+//     ? url.split('watch?v=')[1].split('&')[0]
+//     : url?.split('/').pop();
+//   return this.sanitizer.bypassSecurityTrustResourceUrl(
+//     `https://www.youtube.com/embed/${id}`
+//   );
+// }
+safeYoutubeUrl(url: string): SafeResourceUrl {
+  if (!url) {
+    console.error("Empty URL ❌");
+    return '';
   }
+
+  let id = '';
+
+  // Case 1: https://www.youtube.com/watch?v=VIDEO_ID
+  if (url.includes('watch?v=')) {
+    id = url.split('watch?v=')[1].split('&')[0];
+  }
+
+  // Case 2: https://youtu.be/VIDEO_ID
+  else if (url.includes('youtu.be/')) {
+    id = url.split('youtu.be/')[1];
+  }
+
+  // ❌ Invalid format
+  else {
+    console.error("Invalid YouTube URL ❌", url);
+    return '';
+  }
+
+  console.log("Extracted Video ID 👉", id); // debug
+
+  return this.sanitizer.bypassSecurityTrustResourceUrl(
+    `https://www.youtube.com/embed/${id}`
+  );
+}
   onTimeUpdate(e: any) {
-    const sec = Math.floor(e.target.currentTime);
-    if (sec % 30 === 0 && sec > 0 && this.current()) {
-      this.progressService.trackProgress(this.courseId, this.current()!.lessonId, sec).subscribe();
-    }
+  const sec = Math.floor(e.target.currentTime);
+
+  if (sec % 30 === 0 && sec > 0 && this.current()) {
+
+    const lesson = this.current()!;
+    const totalSeconds = (lesson.durationMinutes || 0) * 60; // ✅ ADD
+
+    console.log("Tracking 👉", {
+  courseId: this.courseId,
+  lessonId: lesson.lessonId,
+  watchedSeconds: sec,
+  totalSeconds
+});
+
+    this.progressService.trackProgress(
+      this.courseId,
+      lesson.lessonId,
+      sec,
+      totalSeconds   // ✅ ADD THIS
+    ).subscribe();
   }
+}
 }

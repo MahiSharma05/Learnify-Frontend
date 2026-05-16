@@ -23,7 +23,7 @@ import { Enrollment } from '../../../core/models';
       </div>
     } @else {
       <div class="grid grid--auto">
-        @for (e of filtered(); track e.enrollmentId) {
+        @for (e of filtered(); track e.id) {
           <div class="card card--hover" style="display:flex;flex-direction:column;gap:14px">
             <img [src]="e.courseThumbnail || 'assets/default-course.svg'"
               style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:#eef2ff">

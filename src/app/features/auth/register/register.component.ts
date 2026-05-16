@@ -9,7 +9,8 @@ import { ToastService } from '../../../core/services/toast.service';
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, RouterModule, ReactiveFormsModule],
-  templateUrl: './register.component.html'
+  templateUrl: './register.component.html',
+  styleUrls: ['./register.component.css'] // ✅ IMPORTANT (fix UI issue)
 })
 export class RegisterComponent {
 
@@ -19,40 +20,39 @@ export class RegisterComponent {
   private router = inject(Router);
   private toast = inject(ToastService);
 
-  // ✅ Create form (NO ngOnInit needed)
+  // ✅ Form
   registerForm: FormGroup = this.fb.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', Validators.required],
-    role: ['STUDENT', Validators.required] // default role
+    password: ['', [Validators.required, Validators.minLength(6)]],
+    role: ['STUDENT', Validators.required]
   });
 
-  // ✅ Submit handler
+  // ✅ Submit
   onSubmit() {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       return;
     }
 
-    const form = this.registerForm.value;
-
-    const payload = {
-      fullName: form.fullName,
-      email: form.email,
-      password: form.password,
-      role: form.role
-    };
+    const payload = this.registerForm.value;
 
     this.auth.register(payload).subscribe({
       next: () => {
-        this.toast.success('Account created successfully!');
-        this.router.navigate(['/auth/login']);
-      },
+
+  this.toast.success('OTP sent to your email');
+
+  localStorage.setItem(
+    'verifyEmail',
+    this.registerForm.value.email
+  );
+
+  this.router.navigate(['/auth/verify-otp']);
+},
       error: (err) => {
-        console.error(err);
+        console.error('Register Error:', err);
         this.toast.error(err.error?.message || 'Registration failed');
       }
     });
   }
 }
-

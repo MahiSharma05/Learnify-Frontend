@@ -1,0 +1,76 @@
+<div class="auth-container">
+  <h2>Create your account</h2>
+
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <!-- Full Name -->
+    <div>
+      <label>Full Name</label>
+      <input
+        type="text"
+        formControlName="fullName"
+        placeholder="Enter your name"
+      />
+      <small
+        *ngIf="
+          registerForm.get('fullName')?.touched &&
+          registerForm.get('fullName')?.invalid
+        "
+      >
+        Name is required
+      </small>
+    </div>
+
+    <!-- Email -->
+    <div>
+      <label>Email</label>
+      <input
+        type="email"
+        formControlName="email"
+        placeholder="Enter your email"
+      />
+      <small
+        *ngIf="
+          registerForm.get('email')?.touched &&
+          registerForm.get('email')?.invalid
+        "
+      >
+        Valid email is required
+      </small>
+    </div>
+
+    <!-- Password -->
+    <div>
+      <label>Password</label>
+      <input
+        type="password"
+        formControlName="password"
+        placeholder="Enter password"
+      />
+      <small
+        *ngIf="
+          registerForm.get('password')?.touched &&
+          registerForm.get('password')?.invalid
+        "
+      >
+        Password is required (min 6)
+      </small>
+    </div>
+
+    <!-- Role -->
+    <div>
+      <label>Register as</label>
+      <select formControlName="role">
+        <option value="STUDENT">Student</option>
+        <option value="INSTRUCTOR">Instructor</option>
+      </select>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit">Create Account</button>
+  </form>
+
+  <p>
+    Already have an account?
+    <a routerLink="/auth/login">Login</a>
+  </p>
+</div>

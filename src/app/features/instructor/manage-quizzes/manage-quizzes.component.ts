@@ -37,8 +37,8 @@ import { Quiz, Question, Course } from '../../../core/models';
           </div>
         }
 
-        @for (q of quizzes(); track q.quizId) {
-          <div class="quiz-item" [class.active]="selectedQuiz()?.quizId === q.quizId" (click)="selectQuiz(q)">
+        @for (q of quizzes(); track q.id) {
+          <div class="quiz-item" [class.active]="selectedQuiz()?.id === q.id" (click)="selectQuiz(q)">
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
               <div>
                 <h4 style="font-size:14px;font-weight:700">{{ q.title }}</h4>
@@ -53,9 +53,9 @@ import { Quiz, Question, Course } from '../../../core/models';
             <div style="display:flex;gap:6px;margin-top:10px">
               <button class="btn btn--ghost btn--sm" (click)="$event.stopPropagation();editQuiz(q)">✏️ Edit</button>
               @if (!q.isPublished) {
-                <button class="btn btn--success btn--sm" (click)="$event.stopPropagation();publishQuiz(q.quizId)">Publish</button>
+                <button class="btn btn--success btn--sm" (click)="$event.stopPropagation();publishQuiz(q.id)">Publish</button>
               }
-              <button class="btn btn--danger btn--sm" (click)="$event.stopPropagation();deleteQuiz(q.quizId)">Delete</button>
+              <button class="btn btn--danger btn--sm" (click)="$event.stopPropagation();deleteQuiz(q.id)">Delete</button>
             </div>
           </div>
         }
@@ -149,7 +149,7 @@ import { Quiz, Question, Course } from '../../../core/models';
               </div>
             }
 
-            @for (q of questions(); track q.questionId; let i = $index) {
+            @for (q of questions(); track q.id; let i = $index) {
               <div class="question-row">
                 <div class="question-row__num">{{ i + 1 }}</div>
                 <div class="question-row__body">
@@ -157,7 +157,7 @@ import { Quiz, Question, Course } from '../../../core/models';
                   <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
                     {{ q.type }} · {{ q.marks }} mark{{ q.marks > 1 ? 's' : '' }} · Answer: <strong>{{ q.correctAnswer }}</strong>
                   </div>
-                  @if (q.options?.length) {
+                  @if (q.options.length) {
                     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
                       @for (opt of q.options; track opt) {
                         <span class="badge badge--muted">{{ opt }}</span>
@@ -165,7 +165,7 @@ import { Quiz, Question, Course } from '../../../core/models';
                     </div>
                   }
                 </div>
-                <button class="btn btn--danger btn--sm" (click)="deleteQuestion(q.questionId)">✕</button>
+                <button class="btn btn--danger btn--sm" (click)="deleteQuestion(q.id)">✕</button>
               </div>
             }
           </div>
@@ -231,7 +231,7 @@ export class ManageQuizzesComponent implements OnInit {
   selectQuiz(q: Quiz) {
     this.selectedQuiz.set(q);
     this.showQuizForm.set(false);
-    this.assessSvc.getQuestions(q.quizId).subscribe(qs => this.questions.set(qs));
+    this.assessSvc.getQuestions(q.id).subscribe(qs => this.questions.set(qs));
   }
 
   editQuiz(q: Quiz) {
@@ -245,7 +245,7 @@ export class ManageQuizzesComponent implements OnInit {
     this.savingQuiz.set(true);
     const payload = { ...this.qForm.value, courseId: this.courseId } as any;
     const obs = this.selectedQuiz()
-      ? this.assessSvc.updateQuiz(this.selectedQuiz()!.quizId, payload)
+      ? this.assessSvc.updateQuiz(this.selectedQuiz()!.id, payload)
       : this.assessSvc.createQuiz(payload);
     obs.subscribe({
       next: q => {
@@ -286,19 +286,19 @@ export class ManageQuizzesComponent implements OnInit {
       correctAnswer: v.correctAnswer!, marks: v.marks!,
       orderIndex: this.questions().length + 1
     };
-    this.assessSvc.addQuestion(this.selectedQuiz()!.quizId, payload).subscribe({
+    this.assessSvc.addQuestion(this.selectedQuiz()!.id, payload).subscribe({
       next: () => {
         this.savingQ.set(false); this.showQForm.set(false); this.questionForm.reset({ type: 'MCQ', marks: 1 });
-        this.toast.success('Question added!'); this.assessSvc.getQuestions(this.selectedQuiz()!.quizId).subscribe(q => this.questions.set(q));
+        this.toast.success('Question added!'); this.assessSvc.getQuestions(this.selectedQuiz()!.id).subscribe(q => this.questions.set(q));
       },
       error: () => { this.savingQ.set(false); this.toast.error('Failed to add question'); }
     });
   }
 
   deleteQuestion(id: number) {
-    this.assessSvc.deleteQuestion(this.selectedQuiz()!.quizId, id).subscribe(() => {
+    this.assessSvc.deleteQuestion(this.selectedQuiz()!.id, id).subscribe(() => {
       this.toast.success('Question deleted');
-      this.assessSvc.getQuestions(this.selectedQuiz()!.quizId).subscribe(q => this.questions.set(q));
+      this.assessSvc.getQuestions(this.selectedQuiz()!.id).subscribe(q => this.questions.set(q));
     });
   }
 }

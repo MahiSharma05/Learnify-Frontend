@@ -70,7 +70,7 @@ import { User, Course, Enrollment, Payment } from '../../../core/models';
               <tr>
                 <td>
                   <div style="display:flex;align-items:center;gap:10px">
-                    <div class="avatar-sm">{{ u.fullName[0]?.toUpperCase() }}</div>
+                    <div class="avatar-sm">{{ u.fullName[0].toUpperCase() }}</div>
                     {{ u.fullName }}
                   </div>
                 </td>
@@ -95,15 +95,15 @@ import { User, Course, Enrollment, Payment } from '../../../core/models';
     @if (pendingCourses().length > 0) {
       <h2 class="section-title" style="margin-top:28px">Pending Course Approvals</h2>
       <div style="display:flex;flex-direction:column;gap:10px">
-        @for (c of pendingCourses(); track c.courseId) {
+        @for (c of pendingCourses(); track c.id) {
           <div class="card" style="display:flex;justify-content:space-between;align-items:center">
             <div>
               <h4 style="font-weight:700">{{ c.title }}</h4>
               <p style="font-size:13px;color:var(--text-muted)">{{ c.category }} · {{ c.level }}</p>
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn--success btn--sm" (click)="approve(c.courseId)">✓ Approve</button>
-              <button class="btn btn--danger btn--sm"  (click)="reject(c.courseId)">✗ Reject</button>
+              <button class="btn btn--success btn--sm" (click)="approve(c.id)">✓ Approve</button>
+              <button class="btn btn--danger btn--sm"  (click)="reject(c.id)">✗ Reject</button>
             </div>
           </div>
         }
@@ -135,8 +135,11 @@ export class AdminDashboardComponent implements OnInit {
 
   students         = () => this.users().filter(u => u.role === 'STUDENT').length;
   instructors      = () => this.users().filter(u => u.role === 'INSTRUCTOR').length;
-  publishedCourses = () => this.courses().filter(c => c.isPublished).length;
-  pendingCourses   = () => this.courses().filter(c => !c.isPublished);
+  publishedCourses = () => this.courses().filter(c => c.published).length;
+  pendingCourses = () =>
+  this.courses().filter(
+    c => c.approvalStatus === 'PENDING'
+  );
   totalRevenue     = () => this.payments().filter(p => p.status === 'SUCCESS').reduce((s, p) => s + p.amount, 0);
 
   actions = [
@@ -152,7 +155,14 @@ export class AdminDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.adminService.getAllUsers().subscribe(u => this.users.set(u));
-    this.courseService.getAllCourses().subscribe(c => this.courses.set(c));
+    this.courseService.getAllCourses({
+  admin: true
+}).subscribe(c => {
+
+  console.log('ADMIN COURSES:', c);
+
+  this.courses.set(c);
+});
     this.enrollService.getAllEnrollments().subscribe(e => this.enrollments.set(e));
     this.paymentService.getAllPayments().subscribe(p => this.payments.set(p));
   }
@@ -165,5 +175,10 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   approve(id: number) { this.courseService.approveCourse(id).subscribe(() => this.ngOnInit()); }
-  reject(id: number)  { this.courseService.rejectCourse(id, 'Does not meet guidelines').subscribe(() => this.ngOnInit()); }
+  reject(id: number) {
+
+  this.courseService
+      .rejectCourse(id)
+      .subscribe(() => this.ngOnInit());
+}
 }
